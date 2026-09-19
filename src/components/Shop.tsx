@@ -1,92 +1,77 @@
-import { useEffect, useRef } from 'react';
-import AeroShards from './AeroShards';
+import { useEffect, useRef, useState } from 'react';
 import './Shop.css';
 
 const books = [
   {
     id: 1,
-    img: '/images/book1.png',
+    img: '/book1.png',
     title: 'Vedic Astrology Unveiled',
-    subtitle: 'A Complete Guide to Birth Charts',
     price: '₹999',
     originalPrice: '₹1,499',
-    desc: 'Decode the secrets of your birth chart with this comprehensive guide to Vedic astrology, written by Poonam Chaudhary.',
+    buyLink: 'https://rzp.io/rzp/KQgU3Qe9',
   },
   {
     id: 2,
-    img: '/images/book2.png',
+    img: '/book2.png',
     title: 'Cosmic Love & Destiny',
-    subtitle: 'Relationships Through the Stars',
     price: '₹799',
     originalPrice: '₹1,199',
-    desc: 'Understand your relationships, compatibility, and karmic bonds through the ancient wisdom of Vedic astrology.',
+    buyLink: 'https://rzp.io/rzp/atkIt7w',
   },
 ];
 
-function useScrollReveal() {
+// deterministic floating symbols
+const SYMBOLS = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓','☽','☿','♀','♃','♄','✦','★','⊕'];
+const FLOATERS = Array.from({ length: 20 }, (_, i) => ({
+  id: i,
+  symbol: SYMBOLS[i % SYMBOLS.length],
+  top:    ((i * 137.5) % 100).toFixed(1),
+  left:   ((i * 97.3 + 11) % 100).toFixed(1),
+  size:   (14 + (i % 4) * 8).toFixed(0),
+  dur:    (18 + (i % 6) * 4).toFixed(0),
+  delay:  ((i * 1.3) % 8).toFixed(1),
+  opacity:(0.04 + (i % 5) * 0.02).toFixed(2),
+}));
+
+function useReveal() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const items = el.querySelectorAll<HTMLElement>('.shop-card');
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) entry.target.classList.add('visible');
-          else entry.target.classList.remove('visible');
-        });
-      },
-      { threshold: 0.15 }
-    );
-    items.forEach((item) => io.observe(item));
+    const el = ref.current; if (!el) return;
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => e.target.classList.toggle('visible', e.isIntersecting));
+    }, { threshold: 0.15 });
+    el.querySelectorAll<HTMLElement>('.book-card').forEach(n => io.observe(n));
     return () => io.disconnect();
   }, []);
   return ref;
 }
 
 export default function Shop() {
-  const cardsRef = useScrollReveal();
+  const cardsRef = useReveal();
+  const [hovered, setHovered] = useState<number | null>(null);
 
   return (
     <section className="shop-section" id="shop">
 
-      {/* AeroShards background */}
-      <div className="shop-bg" aria-hidden="true">
-        <AeroShards
-          backgroundColor="#0d0a1f"
-          shardColor="#896ABD"
-          accentColor="#A855F7"
-          placement="full"
-          flow="stream"
-          material="pearl"
-          detail="balanced"
-          effect="none"
-          scale={1}
-          spread={1}
-          depth={1}
-          speed={0.8}
-          spin={1}
-          interaction="repel"
-          density={1.2}
-          shardSize={1.0}
-          stretch={1}
-          turbulence={1}
-          glow={1}
-          edgeSoftness={2}
-          bloom={0.4}
-          grain={0.04}
-          chromaticAberration={0.005}
-          transitionDuration={1}
-          interactionRadius={1.5}
-          interactionStrength={0.4}
-          rippleIntensity={0.8}
-          holdToGather
-          paused={false}
-        />
+      {/* floating background symbols */}
+      <div className="shop-floaters" aria-hidden="true">
+        {FLOATERS.map(f => (
+          <span
+            key={f.id}
+            className="shop-floater"
+            style={{
+              top: `${f.top}%`,
+              left: `${f.left}%`,
+              fontSize: `${f.size}px`,
+              opacity: f.opacity,
+              animationDuration: `${f.dur}s`,
+              animationDelay: `${f.delay}s`,
+            }}
+          >
+            {f.symbol}
+          </span>
+        ))}
       </div>
-
-      {/* Top fade from Services */}
-      <div className="shop-overlay" aria-hidden="true" />
 
       <div className="shop-inner">
 
@@ -94,48 +79,41 @@ export default function Shop() {
         <div className="shop-header">
           <span className="shop-tag">✦ &nbsp; BUY FROM US &nbsp; ✦</span>
           <h2 className="shop-title">Sacred Knowledge,<br />Bound in Pages</h2>
-          <p className="shop-subtitle">
-            Handcrafted guides by Poonam Chaudhary — carry the wisdom of the cosmos with you.
-          </p>
         </div>
 
-        {/* Book cards */}
+        {/* Cards — side by side */}
         <div className="shop-cards" ref={cardsRef}>
           {books.map((book, i) => (
             <div
               key={book.id}
-              className="shop-card"
-              style={{ transitionDelay: `${i * 120}ms` }}
+              className="book-card"
+              style={{ transitionDelay: `${i * 100}ms` }}
+              onMouseEnter={() => setHovered(book.id)}
+              onMouseLeave={() => setHovered(null)}
             >
-              {/* Book image */}
-              <div className="shop-card-img-wrap">
-                <img
-                  src={book.img}
-                  alt={book.title}
-                  className="shop-card-img"
-                  onError={(e) => {
-                    // fallback if image not found
-                    (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-                <div className="shop-card-img-placeholder" aria-hidden="true">
-                  <span>📖</span>
-                </div>
-                <div className="shop-card-badge">Bestseller</div>
+              {/* glow */}
+              <div className="book-card-glow" />
+
+              {/* book image with 3d tilt */}
+              <div className={`book-img-wrap${hovered === book.id ? ' hovered' : ''}`}>
+                <img src={book.img} alt={book.title} />
+                <div className="book-spine" />
               </div>
 
-              {/* Info */}
-              <div className="shop-card-body">
-                <p className="shop-card-subtitle">{book.subtitle}</p>
-                <h3 className="shop-card-title">{book.title}</h3>
-                <p className="shop-card-desc">{book.desc}</p>
-
-                <div className="shop-card-footer">
-                  <div className="shop-card-price">
-                    <span className="price-current">{book.price}</span>
-                    <span className="price-original">{book.originalPrice}</span>
+              {/* info row — all in one line */}
+              <div className="book-card-info">
+                <span className="book-card-title">{book.title}</span>
+                <div className="book-card-right">
+                  <div className="book-card-prices">
+                    <span className="book-price">{book.price}</span>
+                    <span className="book-price-og">{book.originalPrice}</span>
                   </div>
-                  <a href="#contact" className="shop-buy-btn">
+                  <a
+                    href={book.buyLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="book-btn"
+                  >
                     Buy Now →
                   </a>
                 </div>
@@ -143,11 +121,6 @@ export default function Shop() {
             </div>
           ))}
         </div>
-
-        {/* Bottom note */}
-        <p className="shop-note">
-          Free delivery across India &nbsp;✦&nbsp; 100% authentic &nbsp;✦&nbsp; Signed copies available
-        </p>
 
       </div>
     </section>
