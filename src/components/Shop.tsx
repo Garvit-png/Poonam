@@ -78,7 +78,7 @@ export default function Shop() {
 
         {/* ── Book rows ── */}
         <div className="book-list" ref={listRef}>
-          {books.map((book, i) => (
+          {books.map((book) => (
             <div
               key={book.id}
               className="book-row"
